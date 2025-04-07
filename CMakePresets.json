@@ -79,6 +79,31 @@
       }
     },
     {
+      "name": "ubuntu-portable",
+      "displayName": "Ubuntu portable",
+      "description": "obs-studio for Ubuntu",
+      "inherits": ["environmentVars"],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "binaryDir": "${sourceDir}/build_ubuntu_portable",
+      "generator": "Ninja",
+      "warnings": {"dev": true, "deprecated": true},
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_INSTALL_LIBDIR": "lib/CMAKE_SYSTEM_PROCESSOR-linux-gnu",
+        "ENABLE_AJA": false,
+        "ENABLE_VLC": true,
+        "ENABLE_WAYLAND": true,
+        "ENABLE_WEBRTC": false,
+        "ENABLE_RELOCATABLE": true,
+        "ENABLE_PORTABLE_CONFIG": true,
+        "CMAKE_INSTALL_PREFIX": {"type": "STRING", "value": "obs-portable"}
+      }
+    },
+    {
       "name": "ubuntu-ci",
       "inherits": ["ubuntu"],
       "cacheVariables": {
