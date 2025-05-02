@@ -1310,6 +1310,7 @@ public:
 	inline const OBSProfileCache &GetProfileCache() const noexcept { return profiles; };
 
 	const OBSProfile &GetCurrentProfile() const;
+	std::string GetCurrentProfileName();
 
 	std::optional<OBSProfile> GetProfileByName(const std::string &profileName) const;
 	std::optional<OBSProfile> GetProfileByDirectoryName(const std::string &directoryName) const;

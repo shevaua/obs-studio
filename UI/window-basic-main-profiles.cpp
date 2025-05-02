@@ -375,6 +375,11 @@ void OBSBasic::RefreshProfileCache()
 	profiles.swap(foundProfiles);
 }
 
+std::string OBSBasic::GetCurrentProfileName()
+{
+	return {config_get_string(App()->GetUserConfig(), "Basic", "Profile")};
+}
+
 const OBSProfile &OBSBasic::GetCurrentProfile() const
 {
 	std::string currentProfileName{config_get_string(App()->GetUserConfig(), "Basic", "Profile")};

@@ -5,6 +5,8 @@
 #include <QFrame>
 #include <QPointer>
 #include <QScopedPointer>
+#include <obs.hpp>
+#include <obs-frontend-api.h>
 
 class OBSBasic;
 
@@ -14,10 +16,13 @@ class OBSBasicControls : public QFrame {
 	Q_OBJECT
 
 	std::unique_ptr<Ui::OBSBasicControls> ui;
+	bool isStreamingActive = false;
 
 	QScopedPointer<QMenu> streamButtonMenu;
 	QPointer<QAction> startStreamAction;
 	QPointer<QAction> stopStreamAction;
+
+	static void OBSFrontendEvent(enum obs_frontend_event event, void *ptr);
 
 private slots:
 	void StreamingPreparing();

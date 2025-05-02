@@ -1,6 +1,17 @@
 #include "moc_basic-controls.cpp"
 
 #include "window-basic-main.hpp"
+#include <obs-frontend-api.h>
+#include <obs.h>
+
+QString appendProfileName(QString origin, OBSBasic *main)
+{
+	std::string result = " (";
+	result.append(main->GetCurrentProfileName());
+	result.append(")");
+	origin.append(QString::fromStdString(result));
+	return origin;
+}
 
 OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui::OBSBasicControls)
 {
@@ -8,8 +19,18 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui:
 	ui->setupUi(this);
 
 	streamButtonMenu.reset(new QMenu());
-	startStreamAction = streamButtonMenu->addAction(QTStr("Basic.Main.StartStreaming"));
-	stopStreamAction = streamButtonMenu->addAction(QTStr("Basic.Main.StopStreaming"));
+	startStreamAction = streamButtonMenu->addAction(
+		appendProfileName(QTStr("Basic.Main.StartStreaming"), main)
+	);
+	stopStreamAction = streamButtonMenu->addAction(
+		appendProfileName(QTStr("Basic.Main.StopStreaming"), main)
+	);
+	ui->streamButton->setText(
+		appendProfileName(
+			QTStr("Basic.Main.StartStreaming"),
+			main
+		)		
+	);
 	QAction *forceStopStreamAction = streamButtonMenu->addAction(QTStr("Basic.Main.ForceStopStreaming"));
 
 	/* Transfer buttons signals as OBSBasicControls signals */
@@ -96,12 +117,37 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui:
 	connect(main, &OBSBasic::BroadcastFlowEnabled, this, &OBSBasicControls::EnableBroadcastFlow);
 	connect(main, &OBSBasic::ReplayBufEnabled, this, &OBSBasicControls::EnableReplayBufferButtons);
 	connect(main, &OBSBasic::VirtualCamEnabled, this, &OBSBasicControls::EnableVirtualCamButtons);
+
+	obs_frontend_add_event_callback(OBSFrontendEvent, this);
 }
 
 void OBSBasicControls::StreamingPreparing()
 {
 	ui->streamButton->setEnabled(false);
 	ui->streamButton->setText(QTStr("Basic.Main.PreparingStream"));
+}
+
+void OBSBasicControls::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
+{
+	OBSBasicControls *controls = reinterpret_cast<OBSBasicControls *>(ptr);
+	OBSBasic *basic = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+
+	switch (event) {
+		case OBS_FRONTEND_EVENT_PROFILE_CHANGED:
+		case OBS_FRONTEND_EVENT_PROFILE_RENAMED:
+			controls->ui->streamButton->setText(
+				appendProfileName(
+					controls->isStreamingActive ? QTStr("Basic.Main.StopStreaming") : QTStr("Basic.Main.StartStreaming"),
+					basic
+				)
+			);
+			break;
+		case OBS_FRONTEND_EVENT_EXIT:
+			obs_frontend_remove_event_callback(OBSFrontendEvent, controls);
+			break;
+		default:
+			break;
+	}
 }
 
 void OBSBasicControls::StreamingStarting(bool broadcastAutoStart)
@@ -122,9 +168,16 @@ void OBSBasicControls::StreamingStarting(bool broadcastAutoStart)
 
 void OBSBasicControls::StreamingStarted(bool withDelay)
 {
+	isStreamingActive = true;
+	OBSBasic *basic = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	ui->streamButton->setEnabled(true);
 	ui->streamButton->setChecked(true);
-	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
+	ui->streamButton->setText(
+		appendProfileName(
+			QTStr("Basic.Main.StopStreaming"),
+			basic
+		)		
+	);
 
 	if (withDelay) {
 		ui->streamButton->setMenu(streamButtonMenu.get());
@@ -140,9 +193,16 @@ void OBSBasicControls::StreamingStopping()
 
 void OBSBasicControls::StreamingStopped(bool withDelay)
 {
+	isStreamingActive = false;
+	OBSBasic *basic = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	ui->streamButton->setEnabled(true);
 	ui->streamButton->setChecked(false);
-	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
+	ui->streamButton->setText(
+		appendProfileName(
+			QTStr("Basic.Main.StartStreaming"),
+			basic
+		)
+	);
 
 	if (withDelay) {
 		if (!ui->streamButton->menu())
